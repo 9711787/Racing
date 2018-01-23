@@ -30,11 +30,22 @@ base_subset = pd.read_csv('acotsp_stats.csv')
 base_data_info = base_data.iloc[:,1:4]
 base_data = base_data.iloc[:, 5:].as_matrix()
 
+base_data_info['rho_string1'] = np.where(base_data_info['rho'] == 0.1, '0.1', '')
+base_data_info['rho_string2'] = np.where(base_data_info['rho'] == 0.2, '0.2', '')
+base_data_info['race_type2'] = base_data_info['race_type'] + base_data_info['rho_string1'] + base_data_info['rho_string2']
 
-print(base_data)
+base_subset['rho_string1'] = np.where(base_subset['rho'] == 0.1, '0.1', '')
+base_subset['rho_string2'] = np.where(base_subset['rho'] == 0.2, '0.2', '')
+base_subset['race_type2'] = base_subset['race_type'] + base_subset['rho_string1'] + base_subset['rho_string2']
 
 
-race_parameters = ["DeleteWorst",
+
+print(base_data_info.head())
+print(base_data_info.head())
+print(base_subset.head())
+
+
+race_parameters = ["DeleteWorst0.1", "DeleteWorst0.2",
               "Hoeffding", "Bernstein", "Bayesian",
               "BlockingHoeffding", "BlockingBernstein", "BlockingBayesian",
               "FRaceT1", "FRaceT2",
@@ -43,7 +54,7 @@ race_parameters = ["DeleteWorst",
 
 
 
-plotting_groups = [("DeleteWorst",
+plotting_groups = [("DeleteWorst0.1", "DeleteWorst0.2",
               "Hoeffding", "Bernstein", "Bayesian"),
                    ("BlockingHoeffding", "BlockingBernstein", "BlockingBayesian",
               "FRaceT1", "FRaceT2",
@@ -53,7 +64,8 @@ plotting_groups = [("DeleteWorst",
 
 
 
-race_labels =  {"DeleteWorst" : "DeleteWorst",
+race_labels =  {"DeleteWorst0.1" : "DeleteWorst Rho = 0.1",
+                "DeleteWorst0.2" : "DeleteWorst Rho = 0.2",
               "Hoeffding" : "Hoeffding",
                "Bernstein" : "Bernstein",
                "Bayesian" : "Bayesian",
@@ -79,8 +91,8 @@ for cand in no_cands:
     x = 0
     for race in race_parameters:
         x += 1
-        to_plot_index = base_data_info[(base_data_info.race_type == race) & (base_data_info.no_cand == cand)].index
-        y_max = int(np.max(base_subset[(base_subset.race_type == race) & (base_subset.no_cand == cand)]["no_task"]))
+        to_plot_index = base_data_info[(base_data_info.race_type2 == race) & (base_data_info.no_cand == cand)].index
+        y_max = int(np.max(base_subset[(base_subset.race_type2 == race) & (base_subset.no_cand == cand)]["no_task"]))
         print(race, y_max)
         # if x == 15:
         #     y_max = 85
@@ -90,17 +102,17 @@ for cand in no_cands:
         plot_data = pd.DataFrame(to_plot).transpose()
         sequence = []
         order_seq = []
-        race_type = []
+        race_type2 = []
 
         for i in range(int(np.shape(to_plot)[1] / bin)):
-            race_type += [race]
+            race_type2 += [race]
             sequence += [str(i + 1)] * bin
             order_seq += [str(i + 1)]
 
         plot_data["instance"] = pd.Series(sequence, index=plot_data.index, dtype="unicode_")
-        plot_data["race_type"] = pd.Series(race_type, index=plot_data.index, dtype="unicode_")
-        df_long = pd.melt(plot_data, id_vars=['instance', 'race_type'], value_name='survivors')
-        df_long_full = df_long_full.append(pd.melt(plot_data, id_vars=['instance', 'race_type'], value_name='survivors'))
+        plot_data["race_type2"] = pd.Series(race_type2, index=plot_data.index, dtype="unicode_")
+        df_long = pd.melt(plot_data, id_vars=['instance', 'race_type2'], value_name='survivors')
+        df_long_full = df_long_full.append(pd.melt(plot_data, id_vars=['instance', 'race_type2'], value_name='survivors'))
 
     #print(df_long_full)
 
@@ -113,13 +125,13 @@ for cand in no_cands:
         fig, ax = plt.subplots(figsize=(25, 10))
         to_plot = pd.DataFrame()
         for race in group:
-            to_plot = to_plot.append(df_long_full[df_long_full.race_type == race])
+            to_plot = to_plot.append(df_long_full[df_long_full.race_type2 == race])
         #print(to_plot)
         #print(to_plot.groupby("race_type"))
             #print(to_plot)
         #sns.pointplot(x='instance', y='survivors', order=order_seq, hue = 'race_type', data=to_plot, palette = grayscale, ci=95, ax=ax)
         #sns.pointplot(x='instance', y='survivors', order=order_seq, hue='race_type', data=to_plot, palette=sns.cubehelix_palette(n_colors=14, reverse=True ), ci=95, ax=ax,)
-        sns.pointplot(x='instance',y='survivors', order=order_seq, hue='race_type', data=to_plot,
+        sns.pointplot(x='instance',y='survivors', order=order_seq, hue='race_type2', data=to_plot,
                       palette=tableau20, ax=ax, ci = 95, markers=".") #,linestyles= ["solid", "dotted"]*int(len(group)/2)
 
         # sns.pointplot(x='instance',y='survivors', order=order_seq, hue='race_type', data=to_plot,
@@ -163,7 +175,7 @@ for cand in no_cands:
         plt.legend(handles,new_labs,fontsize=24, markerscale = 3)
 
 
-        file_name = "AvgRanks" + str(g) + "acotsp.pdf"
+        file_name = "AvgRanks" + str(g) + str(cand)+ "acotsp.pdf"
 
         plt.savefig(file_name, bbox_inches='tight')
         g += 1
