@@ -19,16 +19,25 @@ for i in range(len(tableau20)):
 grayscale = sns.dark_palette("white", n_colors=5)
 grayscale2 = sns.dark_palette("white", n_colors=10)
 
+#acotsp
+# base_data = pd.read_csv('acotsp_ranks.csv', delimiter=",")
+# base_subset = pd.read_csv('acotsp_stats.csv')
 
-base_data = pd.read_csv('acotsp_ranks.csv', delimiter=",")
+# #acotspvar
+# base_data = pd.read_csv('acotspvar_ranks.csv', delimiter=",")
+# base_subset = pd.read_csv('acotspvar_stats.csv')
 
-base_subset = pd.read_csv('acotsp_stats.csv')
+
+#spear
+base_data = pd.read_csv('spear_ranks.csv', delimiter=",")
+base_subset = pd.read_csv('spear_stats.csv')
 
 #print(base_data.head())
 #print(base_data_info.head())
 
 base_data_info = base_data.iloc[:,1:4]
 base_data = base_data.iloc[:, 5:].as_matrix()
+
 
 base_data_info['rho_string1'] = np.where(base_data_info['rho'] == 0.1, '0.1', '')
 base_data_info['rho_string2'] = np.where(base_data_info['rho'] == 0.2, '0.2', '')
@@ -79,13 +88,14 @@ race_labels =  {"DeleteWorst0.1" : "DeleteWorst Rho = 0.1",
 
 
 
+max_tasks_array = []
 
 no_cands = [16, 64, 256]
 
 for cand in no_cands:
 
     #TRANSFORM DATA
-    y_max = 50
+    #y_max = 50
     bin = 1
     df_long_full = pd.DataFrame()
     x = 0
@@ -93,6 +103,7 @@ for cand in no_cands:
         x += 1
         to_plot_index = base_data_info[(base_data_info.race_type2 == race) & (base_data_info.no_cand == cand)].index
         y_max = int(np.max(base_subset[(base_subset.race_type2 == race) & (base_subset.no_cand == cand)]["no_task"]))
+        max_tasks_array.append(y_max)
         print(race, y_max)
         # if x == 15:
         #     y_max = 85
@@ -139,30 +150,37 @@ for cand in no_cands:
         #
 
 
-        plt.xlim(-1, 50)
-        #plt.xlim(-1, 110)
-        plt.xlim(-1, 59)
 
-        max_avg_rank = cand/2 +1
-        plt.ylim(0,max_avg_rank)
+        # X axis formating
 
-        x_ticks = np.arange(-1, 40, 10)
-        x_ticks = np.arange(-1, 49, 10)##
-        x_ticks_minor = np.arange(-1, 39, 1)
-        x_ticks_minor = np.arange(-1, 59, 1)##
+        max_tasks = np.max(max_tasks_array)
 
-        y_ticks = np.arange(0, max_avg_rank, 1)
-        #y_ticks = np.arange(0, 10, 1)##
-        y_ticks_minor = np.arange(0, max_avg_rank, 0.5)
-        #y_ticks_minor = np.arange(0, 9, 0.5)##
+        x_minor_increment = 10 ** (np.floor(np.log10(max_tasks)) - 1)
+        x_major_increment = 10 ** (np.floor(np.log10(max_tasks)))
 
+        x_minor_max = np.ceil(max_tasks / x_major_increment) * x_major_increment
+        x_major_max = np.floor(max_tasks / x_major_increment) * x_major_increment
+
+        plt.xlim(-1, x_major_max + 10 * x_minor_increment)
+
+        #plt.xlim(-1, 59)
+        x_ticks = np.arange(-1, x_minor_max, x_major_increment)##
+        x_ticks_minor = np.arange(-1, x_minor_max, x_minor_increment)
         ax.set_xticks(x_ticks)
         ax.set_xticks(x_ticks_minor, minor = True)
-        ax.set_xticklabels(x_ticks + 1, fontsize = 34)
+        ax.set_xticklabels(x_ticks.astype(int) + 1, fontsize = 34)###
 
+
+        # Y axis formating
+        max_avg_rank = cand/2 + cand/16
+        plt.ylim(0, max_avg_rank)
+        y_step = (max_avg_rank - cand/16)/8
+        y_ticks = np.arange(0, max_avg_rank + y_step, y_step)
+        y_ticks_minor = np.arange(0, max_avg_rank, y_step/2)
         ax.set_yticks(y_ticks)
         ax.set_yticks(y_ticks_minor, minor = True)
-        ax.set_yticklabels(y_ticks, fontsize = 34)
+        ax.set_yticklabels(y_ticks.astype(int), fontsize = 34)
+
 
         plt.ylabel("Mean Rank", fontsize = 34)
         plt.xlabel("Tasks", fontsize = 34)
